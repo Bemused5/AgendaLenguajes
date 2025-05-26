@@ -21,7 +21,7 @@ To run the app:
 1. Install dependencies from pyproject.toml:
 
 ```
-pip install
+poetry install
 
 ```
 

@@ -9,6 +9,8 @@ from task_delete_screen import task_delete_screen
 from inicioAdmin import inicio_admin_screen
 from task_statistics_screen_admin import task_statistics_screen_admin
 from change_password_screen import change_password_screen
+from tareasCompletada import completed_tasks_screen   # <- NUEVO IMPORT
+
 
 def main(page: ft.Page):
     page.title = "Task Master"
@@ -28,7 +30,9 @@ def main(page: ft.Page):
         elif page.route == "/taskStatistics":
             page.views.append(task_statistics_screen(page))
         elif page.route == "/addTask":
-            page.views.append(add_task_screen(page)) 
+            page.views.append(add_task_screen(page))
+        elif page.route == "/completedTasks":                   # <- NUEVA RUTA
+            page.views.append(completed_tasks_screen(page))
         elif page.route.startswith("/taskDetails"):
             page.views.append(task_details_screen(page))
         elif page.route.startswith("/deleteTask"):
@@ -42,15 +46,15 @@ def main(page: ft.Page):
         else:
             page.views.append(ft.View(controls=[ft.Text("404: Ruta no encontrada")]))
 
-
         page.update()
 
-    def view_pop(view):
+    def view_pop(_):
         page.views.pop()
         page.update()
 
     page.on_route_change = route_change
     page.on_view_pop = view_pop
     page.go(page.route)
+
 
 ft.app(target=main)

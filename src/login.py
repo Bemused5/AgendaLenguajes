@@ -3,7 +3,7 @@ import mysql.connector
 import re
 
 
-# --------------- CONEXIÓN BD ------------------------------------
+# CONEXIÓN BD 
 def connect_db():
     try:
         conn = mysql.connector.connect(
@@ -19,9 +19,9 @@ def connect_db():
         return None
 
 
-# --------------- PANTALLA LOGIN ---------------------------------
+# PANTALLA LOGIN 
 def login_screen(page: ft.Page) -> ft.Control:
-    # ----------- Widgets ----------------------------------------
+
     title = ft.Text(
         "Task Master",
         size=40,
@@ -47,7 +47,7 @@ def login_screen(page: ft.Page) -> ft.Control:
 
     msg = ft.Text(size=14, color=ft.Colors.RED)
 
-    # ----------- Lógica de autenticación ------------------------
+    # Lógica de autenticación 
     def do_login(_):
         email = email_input.value.strip()
         password = password_input.value.strip()
@@ -117,7 +117,7 @@ def login_screen(page: ft.Page) -> ft.Control:
 
     login_btn.on_click = do_login
 
-    # ----------- Formulario y centrado --------------------------
+    
     form_column = ft.Column(
         [
             lbl_email, email_input,
@@ -141,7 +141,6 @@ def login_screen(page: ft.Page) -> ft.Control:
     page.on_resize = resize
     resize()
 
-    # ----------- Layout final -----------------------------------
     return ft.Column(
         [
             title,

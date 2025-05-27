@@ -1,71 +1,79 @@
 import flet as ft
 
-def inicio_admin_screen(page: ft.Page) -> ft.View:
-    """Pantalla de inicio para el administrador."""
 
-    def logout(e):
+def inicio_admin_screen(page: ft.Page) -> ft.View:
+   
+    def logout(_):
         page.user_data = {}
         page.go("/")
 
-    # AppBar (barra superior)
+
     appbar = ft.AppBar(
-        automatically_imply_leading=False,
-        leading_width=220,
-        toolbar_height=60,
-        leading=ft.Row(
-            alignment=ft.MainAxisAlignment.START,
-            spacing=10,
-            controls=[
-                ft.Container(
-                    content=ft.IconButton(
-                        icon=ft.Icons.LOGOUT,
-                        icon_color=ft.Colors.WHITE,
-                        tooltip="Cerrar sesión",
-                        on_click=logout
-                    ),
-                    bgcolor=ft.Colors.GREEN_300,
-                    padding=ft.padding.all(5),
-                    border_radius=ft.border_radius.all(30),
-                ),
-            ],
+        leading=ft.IconButton(
+            icon=ft.Icons.LOGOUT,
+            tooltip="Cerrar sesión",
+            on_click=logout,
         ),
         title=ft.Text("Agenda de tareas"),
         center_title=True,
-        bgcolor=ft.Colors.BLUE_GREY_50,
-        actions=[],
+        bgcolor=ft.Colors.WHITE,
     )
 
-    # Contenido principal
+    def option_row(label: str, btn_text: str, on_click, danger=False):
+        btn_color = ft.Colors.RED if danger else ft.Colors.BLUE
+        return ft.Row(
+            [
+                ft.Text(label, expand=True),
+                ft.ElevatedButton(
+                    btn_text,
+                    bgcolor=btn_color,
+                    color=ft.Colors.WHITE,
+                    on_click=on_click,
+                ),
+            ],
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=20,
+        )
+
+    
     content = ft.Column(
-        alignment=ft.MainAxisAlignment.START,
-        horizontal_alignment=ft.CrossAxisAlignment.START,
-        spacing=20,
-        controls=[
-            ft.Text("Opciones", size=20, weight=ft.FontWeight.BOLD),
-            ft.ElevatedButton(
-                text="Estadísticas de un usuario en específico",
-                on_click=lambda e: page.go("/taskStatisticsAdmin?type=single"),
-                width=300
+        [
+            # Opciones de administración
+            ft.Text("Opciones", size=22, weight=ft.FontWeight.BOLD),
+            option_row(
+                "Estadísticas de un usuario en específico",
+                "Ver",
+                lambda _: page.go("/taskStatisticsAdmin?type=single"),
             ),
-            ft.ElevatedButton(
-                text="Estadísticas de todos los usuarios",
-                on_click=lambda e: page.go("/taskStatisticsAdmin?type=all"),
-                width=300
+            option_row(
+                "Estadísticas de todos los usuarios",
+                "Ver",
+                lambda _: page.go("/taskStatisticsAdmin?type=all"),
             ),
-            ft.Text("Área de peligro", size=20, weight=ft.FontWeight.BOLD),
-            ft.ElevatedButton(
-                text="Modificar contraseña de un usuario",
-                on_click=lambda e: page.go("/ChangePassword"),
-                width=300
+
+            ft.Container(height=20),  
+
+            # Area de peligro
+            ft.Text("Área de peligro", size=22, weight=ft.FontWeight.BOLD),
+            option_row(
+                "Modificar contraseña de un usuario",
+                "Abrir",
+                lambda _: page.go("/ChangePassword"),
+                danger=True,
             ),
         ],
+        spacing=25,
+        expand=True,
     )
 
-    view = ft.View(
-        "/inicioAdmin",
+    # Vista principal
+    return ft.View(
+        route="/inicioAdmin",
         appbar=appbar,
         controls=[content],
+        padding=20,
+        scroll=ft.ScrollMode.AUTO,
+        horizontal_alignment=ft.CrossAxisAlignment.START,
         vertical_alignment=ft.MainAxisAlignment.START,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )
-    return view

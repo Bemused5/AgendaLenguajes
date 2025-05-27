@@ -1,124 +1,149 @@
 import flet as ft
 import mysql.connector
-import re  # Para validar el correo
+import re
 
-# Conexión a la base de datos en Hostinger
+
+# CONEXIÓN BD
 def connect_db():
     try:
-        conn = mysql.connector.connect(
+        return mysql.connector.connect(
             host="srv1281.hstgr.io",
             user="u543141245_LenguajesAdmin",
             password="123456789Upslp",
-            database="u543141245_Lenguajes"
+            database="u543141245_Lenguajes",
         )
-        return conn
     except mysql.connector.Error as err:
         print(f"Error de conexión a la base de datos: {err}")
         return None
-    return mysql.connector.connect(
-        
+
+
+
+def register_screen(page: ft.Page) -> ft.Control:
+    #  COMPONENTES UI
+    title = ft.Text(
+        "Task Master",
+        size=40,
+        weight=ft.FontWeight.BOLD,
+        text_align=ft.TextAlign.CENTER,
     )
 
-def register_screen(page: ft.Page):
-    """Retorna un contenedor con la pantalla de registro de usuario y lo guarda en MySQL."""
+    lbl_user = ft.Text("Nombre de usuario", weight=ft.FontWeight.BOLD)
+    username_input = ft.TextField(hint_text="Gabriel")
 
-    title = ft.Text("Task Master", size=30, weight=ft.FontWeight.BOLD)
+    lbl_email = ft.Text("Correo", weight=ft.FontWeight.BOLD)
+    email_input = ft.TextField(hint_text="ejemplo@gmail.com")
 
-    username_input = ft.TextField(label="Nombre de usuario", hint_text="Gabriel", width=300)
-    email_input = ft.TextField(label="Email", hint_text="ejemplo@gmail.com", width=300)
-    password_input = ft.TextField(label="Contraseña", hint_text="********", password=True, width=300)
-    confirm_password_input = ft.TextField(label="Confirmar contraseña", hint_text="********", password=True, width=300)
+    lbl_pwd = ft.Text("Contraseña", weight=ft.FontWeight.BOLD)
+    password_input = ft.TextField(hint_text="********", password=True)
+
+    lbl_confirm = ft.Text("Confirmar contraseña", weight=ft.FontWeight.BOLD)
+    confirm_password_input = ft.TextField(hint_text="********", password=True)
+
     terms_checkbox = ft.Checkbox(label="Acepto los términos y condiciones")
 
-    message_text = ft.Text("", color=ft.Colors.RED, size=14)  # Mensaje de error
+    create_btn = ft.ElevatedButton(
+        "Crear cuenta", bgcolor=ft.Colors.BLACK, color=ft.Colors.WHITE
+    )
 
-    # Función para validar datos e insertar en la base de datos
-    def create_account(e):
+    login_link = ft.TextButton("Iniciar sesión", on_click=lambda _: page.go("/"))
+
+    msg = ft.Text(size=14, color=ft.Colors.RED)
+
+    # FUNCIÓN CREAR CUENTA 
+    def create_account(_):
         username = username_input.value.strip()
         email = email_input.value.strip()
         password = password_input.value.strip()
-        confirm_password = confirm_password_input.value.strip()
-        terms_accepted = terms_checkbox.value
+        confirm = confirm_password_input.value.strip()
+        accepted = terms_checkbox.value
 
         # Validaciones
-        if not username or not email or not password or not confirm_password:
-            message_text.value = "Todos los campos son obligatorios."
+        if not all([username, email, password, confirm]):
+            msg.value = "Todos los campos son obligatorios."
         elif not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-            message_text.value = "Ingresa un correo válido."
-        elif password != confirm_password:
-            message_text.value = "Las contraseñas no coinciden."
-        elif not terms_accepted:
-            message_text.value = "Debes aceptar los términos y condiciones."
+            msg.value = "Ingresa un correo válido."
+        elif password != confirm:
+            msg.value = "Las contraseñas no coinciden."
+        elif not accepted:
+            msg.value = "Debes aceptar los términos y condiciones."
         else:
-            conn = connect_db()  # Intentar conectar a la base de datos
+            conn = connect_db()
             if conn is None:
-                message_text.value = "Error al conectar con la base de datos."
+                msg.value = "Error al conectar con la base de datos."
             else:
                 try:
-                    cursor = conn.cursor()
-                    # Verificar si el correo ya está registrado
-                    cursor.execute("SELECT email FROM usuarios WHERE email = %s", (email,))
-                    if cursor.fetchone():
-                        message_text.value = "Este correo ya está registrado."
+                    cur = conn.cursor()
+                    cur.execute("SELECT email FROM usuarios WHERE email=%s", (email,))
+                    if cur.fetchone():
+                        msg.value = "Este correo ya está registrado."
                     else:
-                        # Insertar usuario en la base de datos con la contraseña hasheada
-                        query = """
+                        cur.execute(
+                            """
                             INSERT INTO usuarios (nombre, email, contraseña)
-                            VALUES (%s, %s, SHA2(%s, 256))
-                        """
-                        cursor.execute(query, (username, email, password))
+                            VALUES (%s, %s, SHA2(%s,256))
+                            """,
+                            (username, email, password),
+                        )
                         conn.commit()
+                        cur.execute("SELECT LAST_INSERT_ID()")
+                        user_id = cur.fetchone()[0]
 
-                        # Obtener el ID recién insertado
-                        cursor.execute("SELECT LAST_INSERT_ID()")
-                        new_user_id = cursor.fetchone()[0]
-
-                        # Guardar la información del usuario en page (id + nombre)
-                        page.user_data = {
-                            "user_id": new_user_id,
-                            "username": username
-                        }
-
-                        message_text.value = "Cuenta creada exitosamente."
-                        message_text.color = ft.Colors.GREEN
-                        page.go("/inicioUsuario")  # Redirigir a la pantalla principal
-
+                        page.user_data = {"user_id": user_id, "username": username}
+                        msg.value = "Cuenta creada exitosamente."
+                        msg.color = ft.Colors.GREEN
+                        page.go("/inicioUsuario")
                 except mysql.connector.Error as err:
-                    message_text.value = f"Error en la base de datos: {err}"
+                    msg.value = f"Error en la base de datos: {err}"
                 finally:
-                    cursor.close()
+                    cur.close()
                     conn.close()
+        page.update()
 
-        page.update()  # Actualizar UI con el mensaje
+    create_btn.on_click = create_account
 
-    create_account_button = ft.ElevatedButton(
-        text="Crear cuenta",
-        width=300,
-        bgcolor=ft.Colors.BLACK,
-        color=ft.Colors.WHITE,
-        on_click=create_account
+    form_column = ft.Column(
+        [
+            lbl_user, username_input,
+            lbl_email, email_input,
+            lbl_pwd, password_input,
+            lbl_confirm, confirm_password_input,
+            terms_checkbox,
+            create_btn,
+            login_link,
+            msg,
+        ],
+        spacing=12,
+        horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
     )
 
-    login_link = ft.TextButton("Iniciar sesión", on_click=lambda e: page.go("/"))
+    form_container = ft.Container(content=form_column)
 
-    return ft.Container(
-        width=350,
-        padding=20,
-        border_radius=20,
-        bgcolor=ft.Colors.WHITE,
-        content=ft.Column(
-            [
-                title,
-                username_input,
-                email_input,
-                password_input,
-                confirm_password_input,
-                terms_checkbox,
-                create_account_button,
-                message_text,  # Muestra errores o éxito
-                login_link,
-            ],
-            spacing=20,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER
-        ),
+    #AJUSTE RESPONSIVO (90 % ANCHO) 
+    def resize(_=None):
+        target = min(600, int(page.width * 0.9))
+        for ctrl in (
+            username_input,
+            email_input,
+            password_input,
+            confirm_password_input,
+            create_btn,
+        ):
+            ctrl.width = target
+        form_container.width = target
+        page.update()
+
+    page.on_resize = resize
+    resize()
+
+    
+    return ft.Column(
+        [
+            title,
+            ft.Row([form_container],
+                   alignment=ft.MainAxisAlignment.CENTER),
+        ],
+        alignment=ft.MainAxisAlignment.CENTER,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        spacing=40,
+        expand=True,
     )
